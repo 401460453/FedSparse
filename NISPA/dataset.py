@@ -1,4 +1,4 @@
-from torchvision.datasets import  MNIST as MNIST_TORCH
+from torchvision.datasets import MNIST as MNIST_TORCH
 from continuum.datasets import MNIST,  FashionMNIST, EMNIST, Fellowship, CIFAR100, CIFAR10
 from continuum.datasets import InMemoryDataset
 import torch

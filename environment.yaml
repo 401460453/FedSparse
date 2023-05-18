@@ -1,4 +1,4 @@
-name: research
+name: sparcl
 channels:
   - pytorch-lts
   - nvidia
@@ -154,4 +154,3 @@ dependencies:
     - urllib3==1.26.7
     - wrapt==1.13.3
     - xlsxwriter==3.0.2
-prefix: /home/user/anaconda3/envs/research

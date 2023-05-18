@@ -147,7 +147,7 @@ class Learner():
                 weights = list_of_weights(current_model)
                 
 
-                activations, _ = compute_average_activation(current_model, train_loader, DEVICE, current_classes, False)
+                activations, _ = compute_average_activation(current_model, train_loader, DEVICE, current_classes, False) # 这里计算activation干嘛？？？
                 current_model, remainder_connections = grow_connection_A2B(current_model, remainder_connections,
                                                        [weights[0][0].shape[1]]  + [w.shape[0] for w, _ in weights], 
                                                        stable_indices,  activations, 

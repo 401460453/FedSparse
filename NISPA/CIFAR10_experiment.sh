@@ -1,8 +1,3 @@
-#!/bin/bash
-source ~/anaconda3/etc/profile.d/conda.sh
-conda activate research
-
-
 
 #90 REG
 for SEED in  0 19 42 2022 31415

@@ -65,11 +65,11 @@ def compute_stable_and_drop_connections(pruned_model, in_channels, stable_units_
         stable_units_set = [prev_set.union(set(stable_index)) for stable_index, prev_set in zip(stable_indices_new, stable_units_set)]
         stable_indices =  [list(stable_set) for stable_set in stable_units_set]
     
-    
-    stable_indices_new = fix_dead_stable_units(stable_indices_new, pruned_model)
+        # stable_indices_new = fix_dead_stable_units(stable_indices_new, pruned_model)
+    stable_indices = fix_dead_stable_units(stable_indices, pruned_model)
         
     freeze_masks_new, drop_masks = compute_freeze_and_drop(stable_indices, pruned_model)
-    pruned_model, num_dropped_connections  = drop_connections(pruned_model, drop_masks, DEVICE)
+    pruned_model, num_dropped_connections  = drop_connections(pruned_model, drop_masks, DEVICE) # 把p2s去掉，p2p和s2p以及s2s依然在
     
     return pruned_model, freeze_masks_new, num_dropped_connections, stable_indices, stable_units_set
 
@@ -101,7 +101,7 @@ def fix_no_outgoing(model, plastic_indices, num_dropped_connections):
             #not enough connections to fix all
             if num_dropped_connections[i] == 0 or len(plastic_indices[i + 1]) == 0:
                 continue
-            #Dead unit
+            #Dead unit 所有连接均为零的dead plastic
             if np.sum(np.abs(M[:, unit_index])) == 0:
                 target = np.random.choice(plastic_indices[i + 1], 1)
                 M[target, unit_index] = np.ones((M.shape[2], M.shape[3])) if len(M.shape) == 4 else 1
@@ -128,7 +128,7 @@ def fix_dead_stable_units(stable_indices,  model):
         dead_stable_units = []
         for tgt in target_stable:
             if np.sum(np.abs(weight[i][0][tgt, source_stable])) == 0:
-                dead_stable_units.append(tgt)
+                dead_stable_units.append(tgt) # 有些unit虽然被选择为了stable，但是它的输入均来自plastic而没有任何stable，因此也要drop掉
         if len(dead_stable_units) != 0:
             updated_stable_indices = list(target_stable)
             for dead_stable in dead_stable_units:
@@ -208,7 +208,7 @@ def compute_freeze_and_drop(stable_indices, model):
             weight_mask, bias_mask = module.get_mask()
             weight.append((copy.deepcopy(weight_mask).cpu().numpy(), copy.deepcopy(bias_mask).cpu().numpy()))
             
-    #Create Freeze Masks        
+    #Create Freeze Masks     stable到stable
     freeze_masks = []
     for i, (source_stable, target_stable) in enumerate(zip(stable_indices[:-1], stable_indices[1:])):
         source_stable, target_stable = np.array(source_stable, dtype=np.int32), np.array(target_stable, dtype=np.int32)
@@ -246,8 +246,8 @@ def compute_freeze_and_drop(stable_indices, model):
         else:
             mask_w_drop = np.zeros(weight[i][0].shape)
             for unit_index, b in enumerate(mask_b):
-                if b:
-                    mask_w_drop[unit_index, :] = np.logical_not(mask_w[unit_index, :])
+                if b:# 看看b是不是都是真
+                    mask_w_drop[unit_index, :] = np.logical_not(mask_w[unit_index, :]) # 稳定单元与上一层的值为0的连接drop mask为1，其余为0（不是freeze mask取反，因为并非所有unit都是stable）
         drop_masks.append((mask_w_drop, []))
     return freeze_masks, drop_masks
 
@@ -272,7 +272,7 @@ def drop_connections(model, drop_masks, device):
         if isinstance(module, torch.nn.Linear) or isinstance(module, nn.Conv2d):
             weight_mask, bias_mask = module.get_mask()
             before = torch.sum(weight_mask)
-            weight_mask[torch.tensor(drop_masks[mask_index][0], dtype= bool)] = 0 
+            weight_mask[torch.tensor(drop_masks[mask_index][0], dtype= bool)] = 0 # 把p2s去掉，p2p和s2p以及s2s依然在
             after = torch.sum(weight_mask)
             num_drops.append(int(before - after))
             module.set_mask(weight_mask, bias_mask)

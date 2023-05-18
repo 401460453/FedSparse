@@ -169,7 +169,7 @@ def to_var(x, requires_grad = False, volatile = False):
     if isinstance(x, np.ndarray):
         x = torch.tensor(x)
     if torch.cuda.is_available():
-        x = x.to(torch.device("cuda"))
+        x = x.to(DEVICE)
     return Variable(x, requires_grad = requires_grad, volatile = volatile)
 
 

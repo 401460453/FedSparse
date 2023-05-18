@@ -20,7 +20,7 @@ def full_random(model, all_units, stable_indices):
         if len(w_masks[layer_id].shape) == 4:
             pos_conn[np.all(w_masks[layer_id][:,:] == conn_type_1, axis = (2, 3))]  = conn_type_0
         else:
-            pos_conn[w_masks[layer_id] != 0] = 0
+            pos_conn[w_masks[layer_id] != 0] = 0 # 将mask中不为零的元素在pos_conn中对应的位置置为0
         if len(w_masks[layer_id].shape) == 4:
             bias_matrix = copy.deepcopy(pos_conn.sum(axis = (2, 3)))
         else:
